@@ -323,6 +323,7 @@
           const st = bal <= 0 ? "Paid" : "Pending";
           return [t.vendor, t.date, t.item, t.quantity, t.amount, paid, bal, st];
         })
+        
       ].map(r => r.join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
       const link = document.createElement("a");
