@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Transaction - Kannan Flower Shoop</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+
+  <style>
+    /* 🌈 Background */
+    body {
+      background: linear-gradient(135deg, #6f42c1, #007bff);
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    /* 🌸 Form Card */
+    .transaction-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+      max-width: 850px;
+      width: 100%;
+      padding: 40px 50px;
+      backdrop-filter: blur(10px);
+    }
+
+    .transaction-card h2 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2.6rem;
+      text-align: center;
+      color: #6f42c1;
+      margin-bottom: 10px;
+    }
+
+    .transaction-card p {
+      text-align: center;
+      color: #555;
+      margin-bottom: 30px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #444;
+    }
+
+    input, select {
+      border-radius: 10px !important;
+    }
+
+    .btn-custom {
+      background: linear-gradient(90deg, #007bff, #6f42c1);
+      border: none;
+      color: white;
+      font-weight: 600;
+      border-radius: 12px;
+      padding: 12px 25px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-custom:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(111, 66, 193, 0.5);
+    }
+
+    .btn-secondary {
+      border-radius: 12px;
+    }
+
+    .form-section {
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #ddd;
+    }
+
+    @media (max-width: 768px) {
+      .transaction-card {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="transaction-card">
+    <h2>💰 Add New Transaction</h2>
+    <p>Kannan Flower Shoop - Vendor Transaction Entry</p>
+
+    <!-- Transaction Form -->
+    <form id="transactionForm" class="row g-3 form-section">
+      <div class="col-md-6">
+        <label for="vendorSelect" class="form-label">Vendor Name</label>
+        <select id="vendorSelect" class="form-select" required>
+          <option value="">-- Select Vendor --</option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label for="date" class="form-label">Transaction Date (Entry Date)</label>
+        <input type="date" id="date" class="form-control" required>
+      </div>
+
+      <div class="col-md-6">
+        <label for="purchaseDate" class="form-label">Purchase Date from Vendor</label>
+        <input type="date" id="purchaseDate" class="form-control" required>
+      </div>
+
+      <div class="col-md-6">
+        <label for="item" class="form-label">Item Purchased</label>
+        <input type="text" id="item" class="form-control" placeholder="e.g. Jasmine, Roses..." required>
+      </div>
+
+      <div class="col-md-3">
+        <label for="quantity" class="form-label">Quantity</label>
+        <input type="number" id="quantity" class="form-control" placeholder="Enter quantity" required>
+      </div>
+
+      <div class="col-md-3">
+        <label for="amount" class="form-label">Amount (₹)</label>
+        <input type="number" id="amount" class="form-control" placeholder="Enter amount" required>
+      </div>
+
+      <div class="col-md-4">
+        <label for="paymentStatus" class="form-label">Payment Status</label>
+        <select id="paymentStatus" class="form-select" required>
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+        </select>
+      </div>
+
+      <div class="col-12 text-end mt-3">
+        <button type="submit" class="btn btn-custom me-2">💾 Save Transaction</button>
+        <a href="index.html" class="btn btn-secondary">⬅️ Back</a>
+      </div>
+    </form>
+
+    <footer class="mt-4">
+      <p>© 2025 Kannan Flower Shoop | Designed by Yogi 💐</p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Load vendors
+    const vendors = JSON.parse(localStorage.getItem("vendors")) || [];
+    const transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+
+    const vendorSelect = document.getElementById("vendorSelect");
+    vendors.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v.name;
+      opt.textContent = v.name;
+      vendorSelect.appendChild(opt);
+    });
+
+    // Save Transaction
+    document.getElementById("transactionForm").addEventListener("submit", e => {
+      e.preventDefault();
+
+      const vendor = document.getElementById("vendorSelect").value;
+      const date = document.getElementById("date").value;
+      const purchaseDate = document.getElementById("purchaseDate").value;
+      const item = document.getElementById("item").value.trim();
+      const quantity = Number(document.getElementById("quantity").value);
+      const amount = Number(document.getElementById("amount").value);
+      const paymentStatus = document.getElementById("paymentStatus").value;
+
+      if (!vendor || !date || !purchaseDate || !item || !quantity || !amount) {
+        alert("⚠️ Please fill all fields correctly!");
+        return;
+      }
+
+      transactions.push({
+        vendor,
+        date,
+        purchaseDate,
+        item,
+        quantity,
+        amount,
+        paymentStatus,
+        installments: []
+      });
+
+      localStorage.setItem("transactions", JSON.stringify(transactions));
+      alert("✅ Transaction added successfully!");
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>

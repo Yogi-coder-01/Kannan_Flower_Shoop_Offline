@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kannan Flower Shoop | Dashboard</title>
+
+  <!-- Bootstrap + Chart.js -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #f4f7fa, #dbe9f4);
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+    }
+
+    .dashboard-header {
+      background: linear-gradient(90deg, #007bff, #6f42c1);
+      color: white;
+      padding: 40px 0;
+      text-align: center;
+      border-radius: 0 0 50% 50% / 10%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .dashboard-header h1 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 3rem;
+    }
+
+    .card {
+      border: none;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #007bff;
+    }
+
+    .analysis-section {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 40px;
+    }
+
+    .btn-custom {
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 60px;
+      color: #666;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .table th, .table td {
+      vertical-align: middle;
+    }
+
+    .search-bar input, .search-bar select {
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 🌸 Header -->
+  <div class="dashboard-header">
+    <h1>Kannan Flower Shoop Dashboard</h1>
+    <p>Vendor & Transaction Overview 💐</p>
+  </div>
+
+  <!-- 🌼 Summary Cards -->
+  <div class="container my-5 text-center">
+    <div class="row g-4">
+      <div class="col-md-3"><div class="card p-4"><h4>Total Vendors</h4><div id="totalVendors" class="stat text-primary">0</div></div></div>
+      <div class="col-md-3"><div class="card p-4"><h4>Total Transactions</h4><div id="totalTransactions" class="stat text-info">0</div></div></div>
+      <div class="col-md-3"><div class="card p-4"><h4>Total Paid (₹)</h4><div id="totalPaid" class="stat text-success">0</div></div></div>
+      <div class="col-md-3"><div class="card p-4"><h4>Total Pending (₹)</h4><div id="totalPending" class="stat text-danger">0</div></div></div>
+    </div>
+  </div>
+
+  <!-- 🔍 Individual Vendor Analysis -->
+  <div class="container analysis-section">
+    <h4 class="text-start text-primary mb-3">🔍 Individual Vendor Analysis</h4>
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <select id="vendorSelectDashboard" class="form-select">
+          <option value="">-- Select Vendor --</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button id="analyzeBtn" class="btn btn-primary btn-custom">Show Analysis</button>
+      </div>
+    </div>
+
+    <div id="vendorAnalysis" style="display:none;">
+      <div class="row text-start mb-4">
+        <div class="col-md-4"><strong>Total Transactions:</strong> <span id="vTransCount">0</span></div>
+        <div class="col-md-4"><strong>Total Amount:</strong> ₹<span id="vTotalAmount">0</span></div>
+        <div class="col-md-4"><strong>Total Paid:</strong> ₹<span id="vTotalPaid">0</span></div>
+        <div class="col-md-4"><strong>Pending:</strong> ₹<span id="vPending">0</span></div>
+        <div class="col-md-4"><strong>Status:</strong> <span id="vStatus" class="badge bg-secondary">-</span></div>
+      </div>
+
+      <canvas id="vendorChart" height="100"></canvas>
+
+      <hr class="my-4">
+      <h5 class="text-start text-primary">Transaction Details</h5>
+      <table class="table table-striped table-hover text-center">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Amount</th>
+            <th>Paid</th>
+            <th>Pending</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="vendorTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 📋 All Transactions Overview -->
+  <div class="container analysis-section">
+    <h4 class="text-start text-success mb-3">📋 All Transactions Overview</h4>
+
+    <!-- Filters -->
+    <div class="row mb-3 search-bar">
+      <div class="col-md-4">
+        <input type="text" id="searchInput" class="form-control" placeholder="🔎 Search by Vendor or Item">
+      </div>
+      <div class="col-md-3">
+        <select id="statusFilter" class="form-select">
+          <option value="">-- Filter by Status --</option>
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button id="exportBtn" class="btn btn-success btn-custom">⬇️ Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <table class="table table-striped text-center">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Vendor</th>
+          <th>Date</th>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Amount</th>
+          <th>Paid</th>
+          <th>Pending</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="allTransTable"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    <a href="index.html" class="btn btn-outline-primary btn-sm">🏠 Back to Home</a>
+    <p class="mt-3">© 2025 Kannan Flower Shoop | Designed by Yogi 💙</p>
+  </footer>
+
+  <script>
+    const vendors = JSON.parse(localStorage.getItem("vendors")) || [];
+    const transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+
+    // Summary Stats
+    document.getElementById("totalVendors").textContent = vendors.length;
+    document.getElementById("totalTransactions").textContent = transactions.length;
+
+    let totalPaid = 0, totalAmount = 0;
+    transactions.forEach(t => {
+      const paid = (t.installments || []).reduce((sum, p) => sum + Number(p.paid), 0);
+      totalPaid += Math.min(paid, t.amount);
+      totalAmount += t.amount;
+    });
+    const totalPending = totalAmount - totalPaid;
+    document.getElementById("totalPaid").textContent = "₹" + totalPaid.toLocaleString();
+    document.getElementById("totalPending").textContent = "₹" + totalPending.toLocaleString();
+
+    // Fill vendor dropdown
+    const vendorSelect = document.getElementById("vendorSelectDashboard");
+    vendors.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v.name;
+      opt.textContent = v.name;
+      vendorSelect.appendChild(opt);
+    });
+
+    // Vendor Analysis
+    document.getElementById("analyzeBtn").addEventListener("click", () => {
+      const selected = vendorSelect.value;
+      if (!selected) return alert("Please select a vendor!");
+
+      const vTrans = transactions.filter(t => t.vendor === selected);
+      if (vTrans.length === 0) return alert("No transactions found for this vendor.");
+
+      const totalAmt = vTrans.reduce((sum, t) => sum + Number(t.amount), 0);
+      const totalPaid = vTrans.reduce((sum, t) => sum + (t.installments || []).reduce((a, b) => a + Number(b.paid), 0), 0);
+      const pending = totalAmt - totalPaid;
+      const status = pending <= 0 ? "Paid" : "Pending";
+
+      document.getElementById("vendorAnalysis").style.display = "block";
+      document.getElementById("vTransCount").textContent = vTrans.length;
+      document.getElementById("vTotalAmount").textContent = totalAmt;
+      document.getElementById("vTotalPaid").textContent = totalPaid;
+      document.getElementById("vPending").textContent = pending;
+      document.getElementById("vStatus").textContent = status;
+      document.getElementById("vStatus").className = `badge ${status === "Paid" ? "bg-success" : "bg-warning text-dark"}`;
+
+      // Vendor table
+      const tbody = document.getElementById("vendorTableBody");
+      tbody.innerHTML = vTrans.map((t, i) => {
+        const paid = (t.installments || []).reduce((a, b) => a + Number(b.paid), 0);
+        const bal = t.amount - paid;
+        const st = bal <= 0 ? "Paid" : "Pending";
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${t.date}</td>
+            <td>${t.item}</td>
+            <td>${t.quantity}</td>
+            <td>₹${t.amount}</td>
+            <td>₹${paid}</td>
+            <td>₹${bal}</td>
+            <td><span class="badge ${st === "Paid" ? "bg-success" : "bg-warning text-dark"}">${st}</span></td>
+          </tr>
+        `;
+      }).join("");
+
+      // Chart
+      const ctx = document.getElementById("vendorChart").getContext("2d");
+      if (window.vendorChart) window.vendorChart.destroy();
+      window.vendorChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: vTrans.map(t => t.date),
+          datasets: [
+            { label: "Total (₹)", data: vTrans.map(t => t.amount), backgroundColor: "#6f42c1" },
+            { label: "Paid (₹)", data: vTrans.map(t => (t.installments || []).reduce((a,b)=>a+Number(b.paid),0)), backgroundColor: "#007bff" }
+          ]
+        },
+        options: { plugins: { legend: { labels: { color: "#333" } } } }
+      });
+    });
+
+    // All Transactions Overview
+    const allTable = document.getElementById("allTransTable");
+    function renderAllTransactions() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const status = document.getElementById("statusFilter").value;
+
+      const filtered = transactions.filter(t => {
+        const paid = (t.installments || []).reduce((a, b) => a + Number(b.paid), 0);
+        const bal = t.amount - paid;
+        const st = bal <= 0 ? "Paid" : "Pending";
+        return (
+          (t.vendor.toLowerCase().includes(search) || t.item.toLowerCase().includes(search)) &&
+          (status === "" || status === st)
+        );
+      });
+
+      allTable.innerHTML = filtered.map((t, i) => {
+        const paid = (t.installments || []).reduce((a,b)=>a+Number(b.paid),0);
+        const bal = t.amount - paid;
+        const st = bal <= 0 ? "Paid" : "Pending";
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${t.vendor}</td>
+            <td>${t.date}</td>
+            <td>${t.item}</td>
+            <td>${t.quantity}</td>
+            <td>₹${t.amount}</td>
+            <td>₹${paid}</td>
+            <td>₹${bal}</td>
+            <td><span class="badge ${st === "Paid" ? "bg-success" : "bg-warning text-dark"}">${st}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    document.getElementById("searchInput").addEventListener("input", renderAllTransactions);
+    document.getElementById("statusFilter").addEventListener("change", renderAllTransactions);
+
+    // Export All Transactions
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      if (transactions.length === 0) return alert("No records to export!");
+      const csv = [
+        ["Vendor", "Date", "Item", "Qty", "Amount", "Paid", "Pending", "Status"],
+        ...transactions.map(t => {
+          const paid = (t.installments || []).reduce((a,b)=>a+Number(b.paid),0);
+          const bal = t.amount - paid;
+          const st = bal <= 0 ? "Paid" : "Pending";
+          return [t.vendor, t.date, t.item, t.quantity, t.amount, paid, bal, st];
+        })
+      ].map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "all_transactions.csv";
+      link.click();
+    });
+
+    renderAllTransactions();
+  </script>
+</body>
+</html>

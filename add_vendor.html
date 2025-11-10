@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Vendors - Kannan Flower Shoop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #6f42c1, #007bff);
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+      padding: 40px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      padding: 40px 30px;
+      max-width: 900px;
+    }
+
+    h2 {
+      color: #6f42c1;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    label {
+      font-weight: 600;
+    }
+
+    .btn-custom {
+      background: linear-gradient(90deg, #007bff, #6f42c1);
+      color: white;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .btn-custom:hover {
+      transform: scale(1.05);
+    }
+
+    .table th, .table td {
+      vertical-align: middle;
+    }
+
+    .modal-content {
+      border-radius: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🌸 Vendor Management - Kannan Flower Shoop 🌸</h2>
+
+    <!-- Add Vendor -->
+    <form id="vendorForm" class="row g-3 mt-4">
+      <div class="col-md-4">
+        <label for="vendorName" class="form-label">Vendor Name</label>
+        <input type="text" id="vendorName" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label for="vendorContact" class="form-label">Contact</label>
+        <input type="text" id="vendorContact" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label for="vendorAddress" class="form-label">Address</label>
+        <input type="text" id="vendorAddress" class="form-control" required>
+      </div>
+      <div class="col-12 text-end">
+        <button type="submit" class="btn btn-custom">➕ Add Vendor</button>
+        <a href="index.html" class="btn btn-secondary">⬅️ Back</a>
+      </div>
+    </form>
+
+    <!-- Vendor List -->
+    <div class="mt-5">
+      <h4 class="text-primary">Vendor List</h4>
+      <table class="table table-bordered table-hover text-center mt-3">
+        <thead class="table-primary">
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Address</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="vendorTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 🔐 Admin Mobile & OTP Modal -->
+  <div class="modal fade" id="otpModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-4">
+        <h5 class="text-center mb-3">🔐 Admin Verification</h5>
+        <div id="otpStep1">
+          <label class="form-label">Enter Admin Mobile Number:</label>
+          <input type="text" id="adminMobile" class="form-control mb-3" placeholder="Enter 10-digit number" maxlength="10">
+          <div class="text-center">
+            <button class="btn btn-custom" id="sendOtpBtn">Send OTP</button>
+          </div>
+        </div>
+
+        <div id="otpStep2" style="display:none;">
+          <p class="text-center text-success mb-2">OTP sent to your mobile number ✅</p>
+          <label class="form-label">Enter OTP:</label>
+          <input type="text" id="otpInput" class="form-control mb-3" placeholder="Enter 4-digit OTP" maxlength="4">
+          <div class="text-center">
+            <button class="btn btn-success" id="verifyOtpBtn">Verify OTP</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let vendors = JSON.parse(localStorage.getItem("vendors")) || [];
+    const vendorTable = document.getElementById("vendorTable");
+    let verifiedAdmin = false;
+    let pendingAction = null;
+    let currentOtp = null;
+
+    function renderVendors() {
+      vendorTable.innerHTML = vendors.map((v, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${v.name}</td>
+          <td>${v.contact}</td>
+          <td>${v.address}</td>
+          <td>
+            <button class="btn btn-warning btn-sm" onclick="requestAdminAccess('edit', ${i})">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="requestAdminAccess('delete', ${i})">🗑️ Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Add vendor
+    document.getElementById("vendorForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const name = document.getElementById("vendorName").value.trim();
+      const contact = document.getElementById("vendorContact").value.trim();
+      const address = document.getElementById("vendorAddress").value.trim();
+
+      if (!name || !contact || !address) return alert("Please fill all fields.");
+
+      vendors.push({ name, contact, address });
+      localStorage.setItem("vendors", JSON.stringify(vendors));
+      renderVendors();
+      e.target.reset();
+      alert("✅ Vendor added successfully!");
+    });
+
+    // 🔐 Request Admin Access
+    function requestAdminAccess(action, index) {
+      if (verifiedAdmin) {
+        performVendorAction(action, index);
+        return;
+      }
+
+      pendingAction = { action, index };
+      document.getElementById("otpStep1").style.display = "block";
+      document.getElementById("otpStep2").style.display = "none";
+      new bootstrap.Modal(document.getElementById("otpModal")).show();
+    }
+
+    // Send OTP (Simulated)
+    document.getElementById("sendOtpBtn").addEventListener("click", () => {
+      const mobile = document.getElementById("adminMobile").value.trim();
+      if (mobile.length !== 10) return alert("⚠️ Please enter a valid 10-digit mobile number.");
+
+      // Simulated OTP
+      currentOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      alert(`📱 OTP sent successfully (Simulated OTP: ${currentOtp})`);
+
+      document.getElementById("otpStep1").style.display = "none";
+      document.getElementById("otpStep2").style.display = "block";
+    });
+
+    // Verify OTP
+    document.getElementById("verifyOtpBtn").addEventListener("click", () => {
+      const otpEntered = document.getElementById("otpInput").value.trim();
+      if (otpEntered === currentOtp) {
+        verifiedAdmin = true;
+        alert("✅ Admin verified successfully!");
+        bootstrap.Modal.getInstance(document.getElementById("otpModal")).hide();
+        if (pendingAction) performVendorAction(pendingAction.action, pendingAction.index);
+      } else {
+        alert("❌ Invalid OTP! Try again.");
+      }
+    });
+
+    // Perform Vendor Action
+    function performVendorAction(action, index) {
+      if (action === 'delete') {
+        if (confirm("Are you sure you want to delete this vendor?")) {
+          vendors.splice(index, 1);
+          localStorage.setItem("vendors", JSON.stringify(vendors));
+          renderVendors();
+          alert("🗑️ Vendor deleted successfully!");
+        }
+      } else if (action === 'edit') {
+        const newName = prompt("Enter new vendor name:", vendors[index].name);
+        const newContact = prompt("Enter new contact number:", vendors[index].contact);
+        const newAddress = prompt("Enter new address:", vendors[index].address);
+
+        if (newName && newContact && newAddress) {
+          vendors[index] = { name: newName, contact: newContact, address: newAddress };
+          localStorage.setItem("vendors", JSON.stringify(vendors));
+          renderVendors();
+          alert("✏️ Vendor updated successfully!");
+        }
+      }
+    }
+
+    renderVendors();
+  </script>
+</body>
+</html>

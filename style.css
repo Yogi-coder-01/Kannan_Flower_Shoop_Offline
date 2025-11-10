@@ -1,0 +1,20 @@
+body {
+  background-color: #f8f9fa;
+  font-family: 'Poppins', sans-serif;
+}
+
+h2 {
+  font-weight: bold;
+}
+
+.btn {
+  border-radius: 8px;
+}
+
+.card {
+  border-radius: 12px;
+}
+
+.table th, .table td {
+  vertical-align: middle;
+}
